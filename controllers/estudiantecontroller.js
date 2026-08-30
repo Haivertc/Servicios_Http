@@ -1,15 +1,49 @@
 const Estudiante = require('../models/Estudiante');
 
-// GET /estudiantes  -> lista paginada
+// Campos en los que se permite buscar texto libre (search)
+const CAMPOS_BUSQUEDA = ['nombre', 'apellido', 'correo'];
+
+// Campos en los que se permite ordenar (sortBy)
+const CAMPOS_ORDENAMIENTO = ['nombre', 'apellido', 'correo', 'fecha_nacimiento', 'programa', 'createdAt'];
+
+// Escapa caracteres especiales de regex para que "search" no rompa la consulta
+// ni permita inyectar patrones no deseados
+const escaparRegex = (texto) => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// GET /estudiantes  -> lista paginada, con búsqueda y ordenamiento
 const getEstudiantes = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
     const skip = (page - 1) * limit;
 
+    const { search, sortBy, order } = req.query;
+
+    // --- Filtro de búsqueda ---
+    // Busca coincidencias parciales (case-insensitive) en nombre, apellido o correo
+    const filtro = {};
+    if (search && search.trim() !== '') {
+      const regex = new RegExp(escaparRegex(search.trim()), 'i');
+      filtro.$or = CAMPOS_BUSQUEDA.map((campo) => ({ [campo]: regex }));
+    }
+
+    // --- Ordenamiento ---
+    // Por defecto se ordena por _id ascendente si no se especifica sortBy
+    let ordenamiento = { _id: 1 };
+    if (sortBy) {
+      if (!CAMPOS_ORDENAMIENTO.includes(sortBy)) {
+        return res.status(400).json({
+          message: `El campo de ordenamiento '${sortBy}' no es válido`,
+          camposPermitidos: CAMPOS_ORDENAMIENTO,
+        });
+      }
+      const direccion = order && order.toLowerCase() === 'desc' ? -1 : 1;
+      ordenamiento = { [sortBy]: direccion };
+    }
+
     const [estudiantes, total] = await Promise.all([
-      Estudiante.find().skip(skip).limit(limit),
-      Estudiante.countDocuments(),
+      Estudiante.find(filtro).sort(ordenamiento).skip(skip).limit(limit),
+      Estudiante.countDocuments(filtro),
     ]);
 
     res.status(200).json({

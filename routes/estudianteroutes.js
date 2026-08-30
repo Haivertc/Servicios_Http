@@ -14,7 +14,9 @@ const {
  * /estudiantes:
  *   get:
  *     summary: Lista todos los estudiantes
- *     description: Obtiene un listado paginado de estudiantes.
+ *     description: >
+ *       Obtiene un listado paginado de estudiantes. Permite buscar texto libre en
+ *       nombre, apellido y correo, y ordenar el resultado por un campo específico.
  *     tags:
  *       - Estudiantes
  *     parameters:
@@ -32,6 +34,29 @@ const {
  *           minimum: 1
  *           default: 20
  *         description: Cantidad de registros por página
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Texto a buscar (coincidencia parcial, sin distinguir mayúsculas/minúsculas)
+ *           en los campos nombre, apellido y correo.
+ *         example: gomez
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [nombre, apellido, correo, fecha_nacimiento, programa, createdAt]
+ *         description: Campo por el cual ordenar los resultados.
+ *         example: nombre
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Dirección del ordenamiento (ascendente o descendente).
+ *         example: asc
  *     responses:
  *       200:
  *         description: Listado de estudiantes obtenido exitosamente
@@ -60,7 +85,7 @@ const {
  *                       type: integer
  *                       example: 50
  *       400:
- *         description: Parámetros de consulta inválidos
+ *         description: Parámetros de consulta inválidos (ej. un valor de sortBy no permitido)
  *         content:
  *           application/json:
  *             schema:
