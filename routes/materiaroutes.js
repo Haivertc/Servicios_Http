@@ -14,7 +14,9 @@ const {
  * /materias:
  *   get:
  *     summary: Lista todas las materias
- *     description: Obtiene un listado paginado de materias.
+ *     description: >
+ *       Obtiene un listado paginado de materias. Permite buscar texto libre en
+ *       nombre y codigo, y ordenar el resultado por un campo específico.
  *     tags:
  *       - Materias
  *     parameters:
@@ -32,6 +34,29 @@ const {
  *           minimum: 1
  *           default: 20
  *         description: Cantidad de registros por página
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Texto a buscar (coincidencia parcial, sin distinguir mayúsculas/minúsculas)
+ *           en los campos nombre y codigo.
+ *         example: sistemas
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [nombre, codigo, creditos, semestre]
+ *         description: Campo por el cual ordenar los resultados.
+ *         example: creditos
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Dirección del ordenamiento (ascendente o descendente).
+ *         example: desc
  *     responses:
  *       200:
  *         description: Listado de materias obtenido exitosamente
@@ -60,7 +85,7 @@ const {
  *                       type: integer
  *                       example: 1
  *       400:
- *         description: Parámetros de consulta inválidos
+ *         description: Parámetros de consulta inválidos (ej. un valor de sortBy no permitido)
  *         content:
  *           application/json:
  *             schema:

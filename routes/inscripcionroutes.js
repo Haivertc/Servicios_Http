@@ -14,7 +14,10 @@ const {
  * /inscripciones:
  *   get:
  *     summary: Lista todas las inscripciones
- *     description: Obtiene un listado paginado de inscripciones, con los datos del estudiante y la materia referenciados.
+ *     description: >
+ *       Obtiene un listado paginado de inscripciones, con los datos del estudiante y la
+ *       materia referenciados. Permite buscar texto libre en estado y periodo, y ordenar
+ *       el resultado por un campo específico.
  *     tags:
  *       - Inscripciones
  *     parameters:
@@ -32,6 +35,29 @@ const {
  *           minimum: 1
  *           default: 20
  *         description: Cantidad de registros por página
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Texto a buscar (coincidencia parcial, sin distinguir mayúsculas/minúsculas)
+ *           en los campos estado y periodo.
+ *         example: activa
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [periodo, estado]
+ *         description: Campo por el cual ordenar los resultados.
+ *         example: periodo
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Dirección del ordenamiento (ascendente o descendente).
+ *         example: desc
  *     responses:
  *       200:
  *         description: Listado de inscripciones obtenido exitosamente
@@ -60,7 +86,7 @@ const {
  *                       type: integer
  *                       example: 25
  *       400:
- *         description: Parámetros de consulta inválidos
+ *         description: Parámetros de consulta inválidos (ej. un valor de sortBy no permitido)
  *         content:
  *           application/json:
  *             schema:

@@ -2,6 +2,16 @@ const Inscripcion = require('../models/Inscripcion');
 const Estudiante = require('../models/Estudiante');
 const Materia = require('../models/Materia');
 
+// Campos en los que se permite buscar texto libre (search)
+const CAMPOS_BUSQUEDA = ['estado', 'periodo'];
+
+// Campos en los que se permite ordenar (sortBy)
+const CAMPOS_ORDENAMIENTO = ['periodo', 'estado'];
+
+// Escapa caracteres especiales de regex para que "search" no rompa la consulta
+// ni permita inyectar patrones no deseados
+const escaparRegex = (texto) => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Valida que estudiante_id y materia_id (si vienen en el body) existan realmente
 const validarReferencias = async (estudiante_id, materia_id) => {
   const errores = [];
@@ -19,20 +29,44 @@ const validarReferencias = async (estudiante_id, materia_id) => {
   return errores;
 };
 
-// GET /inscripciones -> lista paginada
+// GET /inscripciones -> lista paginada, con búsqueda y ordenamiento
 const getInscripciones = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
     const skip = (page - 1) * limit;
 
+    const { search, sortBy, order } = req.query;
+
+    // --- Filtro de búsqueda ---
+    // Busca coincidencias parciales (case-insensitive) en estado o periodo
+    const filtro = {};
+    if (search && search.trim() !== '') {
+      const regex = new RegExp(escaparRegex(search.trim()), 'i');
+      filtro.$or = CAMPOS_BUSQUEDA.map((campo) => ({ [campo]: regex }));
+    }
+
+    // --- Ordenamiento ---
+    let ordenamiento = { _id: 1 };
+    if (sortBy) {
+      if (!CAMPOS_ORDENAMIENTO.includes(sortBy)) {
+        return res.status(400).json({
+          message: `El campo de ordenamiento '${sortBy}' no es válido`,
+          camposPermitidos: CAMPOS_ORDENAMIENTO,
+        });
+      }
+      const direccion = order && order.toLowerCase() === 'desc' ? -1 : 1;
+      ordenamiento = { [sortBy]: direccion };
+    }
+
     const [inscripciones, total] = await Promise.all([
-      Inscripcion.find()
+      Inscripcion.find(filtro)
         .populate('estudiante_id', 'nombre apellido correo')
         .populate('materia_id', 'nombre codigo')
+        .sort(ordenamiento)
         .skip(skip)
         .limit(limit),
-      Inscripcion.countDocuments(),
+      Inscripcion.countDocuments(filtro),
     ]);
 
     res.status(200).json({
