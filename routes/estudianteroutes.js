@@ -7,7 +7,7 @@ const {
   replaceEstudiante,
   updateEstudiante,
   deleteEstudiante,
-} = require('../controllers/estudiantecontroller');
+} = require('../controllers/estudianteController');
 
 /**
  * @openapi
@@ -132,8 +132,137 @@ router.get('/:id', getEstudianteById);
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/', createEstudiante);
+/**
+ * @openapi
+ * /estudiantes/{id}:
+ *   put:
+ *     summary: Reemplaza completamente un estudiante existente
+ *     description: Reemplaza todos los campos del estudiante. Se deben enviar todos los campos del recurso.
+ *     tags:
+ *       - Estudiantes
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Id del estudiante (ObjectId de MongoDB)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/EstudianteInput'
+ *     responses:
+ *       200:
+ *         description: Estudiante reemplazado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Estudiante'
+ *       400:
+ *         description: Datos inválidos o id no válido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Estudiante no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.put('/:id', replaceEstudiante);
+
+/**
+ * @openapi
+ * /estudiantes/{id}:
+ *   patch:
+ *     summary: Actualiza parcialmente un estudiante
+ *     description: Actualiza solo los campos enviados en el cuerpo de la petición.
+ *     tags:
+ *       - Estudiantes
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Id del estudiante (ObjectId de MongoDB)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               apellido:
+ *                 type: string
+ *               correo:
+ *                 type: string
+ *                 format: email
+ *               fecha_nacimiento:
+ *                 type: string
+ *                 format: date
+ *               programa:
+ *                 type: string
+ *             example:
+ *               programa: "Ingeniería de Software"
+ *     responses:
+ *       200:
+ *         description: Estudiante actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Estudiante'
+ *       400:
+ *         description: Datos inválidos o id no válido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Estudiante no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.patch('/:id', updateEstudiante);
+
+/**
+ * @openapi
+ * /estudiantes/{id}:
+ *   delete:
+ *     summary: Elimina un estudiante
+ *     tags:
+ *       - Estudiantes
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Id del estudiante (ObjectId de MongoDB)
+ *     responses:
+ *       204:
+ *         description: Estudiante eliminado exitosamente (sin contenido)
+ *       400:
+ *         description: El id proporcionado no es válido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Estudiante no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.delete('/:id', deleteEstudiante);
 
 module.exports = router;
