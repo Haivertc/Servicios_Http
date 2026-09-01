@@ -1,7 +1,7 @@
 const Estudiante = require('../models/Estudiante');
 
 // Campos en los que se permite buscar texto libre (search)
-const CAMPOS_BUSQUEDA = ['nombre', 'apellido', 'correo'];
+const CAMPOS_BUSQUEDA = ['nombre', 'apellido', 'correo', 'programa'];
 
 // Campos en los que se permite ordenar (sortBy)
 const CAMPOS_ORDENAMIENTO = ['nombre', 'apellido', 'correo', 'fecha_nacimiento', 'programa', 'createdAt'];

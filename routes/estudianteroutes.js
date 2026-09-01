@@ -40,7 +40,7 @@ const {
  *           type: string
  *         description: >
  *           Texto a buscar (coincidencia parcial, sin distinguir mayúsculas/minúsculas)
- *           en los campos nombre, apellido y correo.
+ *           en los campos nombre, apellido, correo y programa.
  *         example: gomez
  *       - in: query
  *         name: sortBy
