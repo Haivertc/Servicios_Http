@@ -8,23 +8,71 @@ const CAMPOS_ORDENAMIENTO = ['nombre', 'apellido', 'correo', 'fecha_nacimiento',
 
 // Escapa caracteres especiales de regex para que "search" no rompa la consulta
 // ni permita inyectar patrones no deseados
-const escaparRegex = (texto) => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escaparRegex = (caracter) => caracter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// GET /estudiantes  -> lista paginada, con búsqueda y ordenamiento
+// Mapa de letras "base" a una clase de caracteres que incluye su variante con tilde/diéresis
+const MAPA_TILDES = {
+  a: '[aá]',
+  e: '[eé]',
+  i: '[ií]',
+  o: '[oó]',
+  u: '[uúü]',
+  n: '[nñ]',
+};
+
+// Construye un patrón de regex que ignora tildes: cada letra del término de búsqueda
+// se reemplaza por una clase que acepta la letra con o sin acento (ej. "maria" -> "m[aá]r[ií][aá]"),
+// así encuentra coincidencias sin importar si el usuario o el dato llevan tilde.
+const construirPatronBusqueda = (texto) =>
+  texto
+    .split('')
+    .map((caracter) => MAPA_TILDES[caracter.toLowerCase()] || escaparRegex(caracter))
+    .join('');
+
+// GET /estudiantes  -> lista paginada, con búsqueda, filtros individuales y ordenamiento
 const getEstudiantes = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
     const skip = (page - 1) * limit;
 
-    const { search, sortBy, order } = req.query;
+    const { search, sortBy, order, nombre, apellido, programa, and } = req.query;
 
-    // --- Filtro de búsqueda ---
-    // Busca coincidencias parciales (case-insensitive) en nombre, apellido o correo
-    const filtro = {};
+    // --- Búsqueda global (search) ---
+    // Coincidencia parcial en nombre, apellido, correo o programa
+    let filtroBusquedaGlobal = null;
     if (search && search.trim() !== '') {
-      const regex = new RegExp(escaparRegex(search.trim()), 'i');
-      filtro.$or = CAMPOS_BUSQUEDA.map((campo) => ({ [campo]: regex }));
+      const regex = new RegExp(construirPatronBusqueda(search.trim()), 'i');
+      filtroBusquedaGlobal = { $or: CAMPOS_BUSQUEDA.map((campo) => ({ [campo]: regex })) };
+    }
+
+    // --- Filtros individuales (nombre, apellido, programa) ---
+    // Se combinan entre sí con $and (todos deben coincidir) o $or (basta con uno),
+    // según el valor del parámetro booleano "and".
+    const filtrosIndividuales = { nombre, apellido, programa };
+    const condicionesIndividuales = Object.entries(filtrosIndividuales)
+      .filter(([, valor]) => valor && valor.trim() !== '')
+      .map(([campo, valor]) => ({
+        [campo]: new RegExp(construirPatronBusqueda(valor.trim()), 'i'),
+      }));
+
+    let filtroIndividual = null;
+    if (condicionesIndividuales.length > 0) {
+      const combinarConAnd = and === 'true';
+      filtroIndividual = combinarConAnd
+        ? { $and: condicionesIndividuales }
+        : { $or: condicionesIndividuales };
+    }
+
+    // --- Combinación final ---
+    // Si hay búsqueda global y filtros individuales a la vez, ambos grupos deben cumplirse.
+    let filtro = {};
+    if (filtroBusquedaGlobal && filtroIndividual) {
+      filtro = { $and: [filtroBusquedaGlobal, filtroIndividual] };
+    } else if (filtroBusquedaGlobal) {
+      filtro = filtroBusquedaGlobal;
+    } else if (filtroIndividual) {
+      filtro = filtroIndividual;
     }
 
     // --- Ordenamiento ---

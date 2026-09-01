@@ -15,8 +15,10 @@ const {
  *   get:
  *     summary: Lista todos los estudiantes
  *     description: >
- *       Obtiene un listado paginado de estudiantes. Permite buscar texto libre en
- *       nombre, apellido y correo, y ordenar el resultado por un campo específico.
+ *       Obtiene un listado paginado de estudiantes. Permite buscar texto libre (search)
+ *       en nombre, apellido, correo y programa; filtrar por los campos individuales
+ *       nombre, apellido y programa (combinables con AND u OR mediante el parámetro
+ *       "and"); y ordenar el resultado por un campo específico.
  *     tags:
  *       - Estudiantes
  *     parameters:
@@ -39,9 +41,38 @@ const {
  *         schema:
  *           type: string
  *         description: >
- *           Texto a buscar (coincidencia parcial, sin distinguir mayúsculas/minúsculas)
- *           en los campos nombre, apellido, correo y programa.
+ *           Texto a buscar (coincidencia parcial, sin distinguir mayúsculas/minúsculas
+ *           ni tildes) en los campos nombre, apellido, correo y programa.
  *         example: gomez
+ *       - in: query
+ *         name: nombre
+ *         schema:
+ *           type: string
+ *         description: Filtra por coincidencia parcial en el campo nombre.
+ *         example: ana
+ *       - in: query
+ *         name: apellido
+ *         schema:
+ *           type: string
+ *         description: Filtra por coincidencia parcial en el campo apellido.
+ *         example: gomez
+ *       - in: query
+ *         name: programa
+ *         schema:
+ *           type: string
+ *         description: Filtra por coincidencia parcial en el campo programa.
+ *         example: sistemas
+ *       - in: query
+ *         name: and
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: >
+ *           Determina cómo se combinan los filtros nombre, apellido y programa cuando
+ *           se envía más de uno. Si es true, deben cumplirse TODOS los filtros enviados
+ *           ($and en MongoDB). Si es false o se omite, basta con que se cumpla UNO
+ *           de ellos ($or en MongoDB). No afecta al parámetro search.
+ *         example: true
  *       - in: query
  *         name: sortBy
  *         schema:
